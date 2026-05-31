@@ -4,9 +4,9 @@ metadata:
   name: wordpress
   namespace: wordpress
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: wordpress
   ports:
   - port: 80
-    nodePort: 30080
+    targetPort: 80
