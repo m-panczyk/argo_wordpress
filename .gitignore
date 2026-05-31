@@ -10,6 +10,8 @@
 secrets/
 secret-values.yaml
 secret-values.yml
+*.env
+!*.env.example
 
 # Sealed Secrets private keys (public certs are OK to commit)
 *.key
