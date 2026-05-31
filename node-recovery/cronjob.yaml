@@ -20,13 +20,19 @@ spec:
             - /bin/sh
             - -c
             - |
-              NOT_READY=$(kubectl get nodes --no-headers | awk '$2=="NotReady"{print $1}')
-              if [ -z "$NOT_READY" ]; then exit 0; fi
-              for node in $NOT_READY; do
-                echo "Node $node is NotReady — cleaning VolumeAttachments"
-                kubectl get volumeattachment -o json \
-                  | grep -B5 "\"nodeName\": \"$node\"" \
-                  | grep '"name"' \
-                  | awk -F'"' '{print $4}' \
-                  | xargs -r kubectl delete volumeattachment
+              THRESHOLD=120
+              NOW=$(date +%s)
+              kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .status.conditions[?(@.type=="Ready")]}{.status}{"\t"}{.lastTransitionTime}{"\n"}{end}{end}' \
+              | while IFS=$(printf '\t') read -r node status transtime; do
+                [ "$status" = "False" ] || continue
+                epoch=$(date -d "$transtime" +%s 2>/dev/null) || continue
+                duration=$(( NOW - epoch ))
+                if [ "$duration" -lt "$THRESHOLD" ]; then
+                  echo "Node $node NotReady ${duration}s < ${THRESHOLD}s threshold — skipping"
+                  continue
+                fi
+                echo "Node $node NotReady ${duration}s — removing VolumeAttachments"
+                kubectl get volumeattachment --no-headers \
+                  | awk -v n="$node" '$0 ~ n {print $1}' \
+                  | xargs -r kubectl delete volumeattachment --force --grace-period=0
               done
