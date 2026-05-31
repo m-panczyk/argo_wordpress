@@ -1,0 +1,107 @@
+# ============================================================
+# Kubernetes / ArgoCD GitOps repo — .gitignore
+# ============================================================
+
+# --- Secrets & credentials (NEVER commit these) -------------
+*.secret.yaml
+*.secret.yml
+*-secret.yaml
+*-secret.yml
+secrets/
+secret-values.yaml
+secret-values.yml
+
+# Sealed Secrets private keys (public certs are OK to commit)
+*.key
+*.pem
+*.p12
+*.pfx
+
+# SOPS encrypted files that aren't committed intentionally
+# (remove this line if you commit .enc.yaml on purpose)
+# *.enc.yaml
+
+# --- Helm ---------------------------------------------------
+# Downloaded chart dependencies
+charts/
+
+# Rendered/debug output
+*.rendered.yaml
+*.debug.yaml
+debug/
+
+# Helm test output
+helm-test-results/
+
+# --- Kustomize ----------------------------------------------
+# Local kustomize build output
+kustomize-output/
+build-output/
+
+# --- Kubeconfig & cluster access ----------------------------
+kubeconfig
+kubeconfig.yaml
+kubeconfig.yml
+.kubeconfig
+*.kubeconfig
+
+# --- Local tool output & temp files -------------------------
+.tmp/
+tmp/
+temp/
+*.tmp
+
+# --- ArgoCD CLI session -------------------------------------
+# argocd CLI stores session token here
+.argocd/
+
+# --- Editors ------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- OS -----------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# --- Git-crypt / SOPS key material --------------------------
+.git-crypt/
+.sops.yaml.local
+
+# --- Terraform (if any infra lives alongside manifests) -----
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!*.tfvars.example
+
+# --- Python tools (if you have helper scripts) --------------
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# --- Node (if you have any JS tooling) ----------------------
+node_modules/
+
+# --- Test & CI artifacts ------------------------------------
+test-results/
+coverage/
+.pytest_cache/
+
+# --- Notes & scratch files (keep out of repo) ---------------
+HERMES.md
+CLAUDE.md
+PLAN.md
+NOTES.md
+scratch/
+TODO.local
