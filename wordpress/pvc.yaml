@@ -5,7 +5,7 @@ metadata:
   namespace: wordpress
 spec:
   storageClassName: longhorn
-  accessModes: [ReadWriteMany]
+  accessModes: [ReadWriteOnce]
   resources:
     requests:
       storage: 5Gi
