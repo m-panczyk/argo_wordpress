@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: node-recovery
+  namespace: wordpress
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 50
+      template:
+        spec:
+          serviceAccountName: node-recovery
+          restartPolicy: Never
+          containers:
+          - name: recovery
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              NOT_READY=$(kubectl get nodes --no-headers | awk '$2=="NotReady"{print $1}')
+              if [ -z "$NOT_READY" ]; then exit 0; fi
+              for node in $NOT_READY; do
+                echo "Node $node is NotReady — cleaning VolumeAttachments"
+                kubectl get volumeattachment -o json \
+                  | grep -B5 "\"nodeName\": \"$node\"" \
+                  | grep '"name"' \
+                  | awk -F'"' '{print $4}' \
+                  | xargs -r kubectl delete volumeattachment
+              done

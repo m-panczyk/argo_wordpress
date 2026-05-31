@@ -79,6 +79,42 @@ Sekrety **nie trafiają do repo**. Podejście świadome:
 
 Na produkcję zalecane jest [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) — zaszyfrowany YAML bezpieczny do commitowania.
 
+## Runbook — awaria węzła
+
+### Automatyczne odtwarzanie
+
+CronJob `node-recovery` (uruchamiany co minutę) wykrywa węzły w stanie `NotReady` i usuwa ich `VolumeAttachment`. Dzięki temu Longhorn może remontować wolumeny MySQL na działającym węźle bez interwencji ręcznej.
+
+### Ręczna interwencja — stuck pody
+
+Pierwsze co robisz przy awarii węzła:
+
+```bash
+# 1. Sprawdź co utknęło
+kubectl get pods -n wordpress -o wide
+
+# 2. Force-delete stuck podów (nie czekaj na graceful shutdown martwego węzła)
+kubectl delete pod -n wordpress <nazwa-poda> --force --grace-period=0
+
+# 3. Jeśli VolumeAttachment nie zniknął automatycznie
+kubectl get volumeattachment | grep <nazwa-węzła>
+kubectl delete volumeattachment <nazwa> --force --grace-period=0
+```
+
+> `--force --grace-period=0` jest bezpieczne gdy węzeł fizycznie nie odpowiada — Kubernetes normalnie czeka na potwierdzenie od kubelet, które nigdy nie przyjdzie.
+
+### Odtworzenie mysql-secret po utracie namespace
+
+```bash
+kubectl create secret generic mysql-secret -n wordpress \
+  --from-literal=MYSQL_ROOT_PASSWORD='...' \
+  --from-literal=MYSQL_DATABASE=wordpress \
+  --from-literal=MYSQL_USER=wp \
+  --from-literal=MYSQL_PASSWORD='...'
+```
+
+---
+
 ## Uwagi operacyjne
 
 **Longhorn RWO** — WordPress działa na jednej replice. Skalowanie poziome wymaga RWX (ReadWriteMany), co z kolei wymaga `nfs-common` na węzłach:

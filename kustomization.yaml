@@ -2,6 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
+  - node-recovery/serviceaccount.yaml
+  - node-recovery/clusterrole.yaml
+  - node-recovery/clusterrolebinding.yaml
+  - node-recovery/cronjob.yaml
   - mysql/pvc.yaml
   - mysql/deployment.yaml
   - mysql/service.yaml
