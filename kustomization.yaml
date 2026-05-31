@@ -5,7 +5,7 @@ resources:
   - node-recovery/serviceaccount.yaml
   - node-recovery/clusterrole.yaml
   - node-recovery/clusterrolebinding.yaml
-  - node-recovery/cronjob.yaml
+  - node-recovery/deployment.yaml
   - mysql/pvc.yaml
   - mysql/deployment.yaml
   - mysql/service.yaml

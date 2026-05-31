@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-recovery
+  namespace: wordpress
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node-recovery
+  template:
+    metadata:
+      labels:
+        app: node-recovery
+    spec:
+      serviceAccountName: node-recovery
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: node-recovery
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: recovery
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          THRESHOLD=120
+          while true; do
+            NOW=$(date +%s)
+            kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .status.conditions[?(@.type=="Ready")]}{.status}{"\t"}{.lastTransitionTime}{"\n"}{end}{end}' \
+            | while IFS=$(printf '\t') read -r node status transtime; do
+              [ "$status" = "False" ] || continue
+              epoch=$(date -d "$transtime" +%s 2>/dev/null) || continue
+              duration=$(( NOW - epoch ))
+              if [ "$duration" -lt "$THRESHOLD" ]; then
+                echo "Node $node NotReady ${duration}s < ${THRESHOLD}s — skipping"
+                continue
+              fi
+              echo "Node $node NotReady ${duration}s — removing VolumeAttachments"
+              kubectl get volumeattachment --no-headers \
+                | awk -v n="$node" '$0 ~ n {print $1}' \
+                | xargs -r kubectl delete volumeattachment --force --grace-period=0
+            done
+            sleep 60
+          done
